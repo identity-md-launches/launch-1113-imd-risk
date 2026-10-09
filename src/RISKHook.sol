@@ -191,6 +191,9 @@ contract RISKHook {
         PoolKey memory key = poolKey();
         bool zeroForOne = IMD < token;
         uint160 ref = referencePrice();
+        (uint160 current,,,) = poolManager.getSlot0(key.toId());
+        // Tighten the TWAP band against spot so a lagging reference cannot widen a batch's price impact.
+        if (zeroForOne ? current > ref : current < ref) ref = current;
         // sqrt(0.97), rounded UP; sqrt(1.03), rounded DOWN: conservative price bounds.
         uint256 product = uint256(ref) * (zeroForOne ? 984885780179610473 : 1014889156509221946);
         uint256 scaled = zeroForOne ? (product + 1e18 - 1) / 1e18 : product / 1e18;
@@ -199,7 +202,6 @@ contract RISKHook {
                 ? TickMath.MIN_SQRT_PRICE + 1
                 : scaled > TickMath.MAX_SQRT_PRICE - 1 ? TickMath.MAX_SQRT_PRICE - 1 : scaled
         );
-        (uint160 current,,,) = poolManager.getSlot0(key.toId());
         // No room within the guard: a successful zero-fill batch, with all claims retained.
         if (budget == 0 || (zeroForOne ? current <= limit : current >= limit)) {
             emit BatchExecuted(budget, 0, 0, limit);

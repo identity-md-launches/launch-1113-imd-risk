@@ -230,6 +230,8 @@ contract RISKHookTest is HookFixture {
         vm.warp(hook.lastBatch() + 3600);
         uint160 ref = hook.referencePrice();
         bool z = IMD < address(risk);
+        (uint160 current,,,) = manager.getSlot0(key.toId());
+        if (z ? current > ref : current < ref) ref = current;
         uint256 product = uint256(ref) * (z ? 984885780179610473 : 1014889156509221946);
         uint160 limit = uint160(z ? (product + 1e18 - 1) / 1e18 : product / 1e18);
         uint256 deadBefore = risk.balanceOf(hook.DEAD());
