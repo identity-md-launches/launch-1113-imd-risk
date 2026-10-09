@@ -62,6 +62,10 @@ contract HookFixture is Test {
         deal(IMD, address(this), 1e30);
         IERC20(IMD).approve(address(router), type(uint256).max);
         risk.approve(address(router), type(uint256).max);
+        _seed();
+    }
+
+    function _seed() internal virtual {
         router.liquidity(key, ModifyLiquidityParams(-887220, 887220, int256(uint256(LIQUIDITY)), bytes32(0)));
     }
 
