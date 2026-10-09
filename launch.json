@@ -1,0 +1,16 @@
+{
+  "kind": "univ4_hook",
+  "token": {"contract": "RISK", "name": "IMD RISK", "symbol": "RISK", "decimals": 18},
+  "hook": {
+    "contract": "RISKHook",
+    "constructorArgs": ["$poolManager", "$token"],
+    "permissions": ["beforeInitialize", "beforeSwap", "afterSwap", "afterSwapReturnDelta"]
+  },
+  "pool": {
+    "pairedCurrency": "0xd34a99bc0f67ae1bbd63c660e6d0b0dd03e263b7",
+    "fee": 12500,
+    "tickSpacing": 60,
+    "initialPrice": "79228162514264337593543950336"
+  },
+  "notes": "$poolManager resolves to Ethereum mainnet's Uniswap v4 PoolManager and $token to the freshly deployed RISK. Deploy RISKHook directly with CREATE2 at flags 0x20c4 (beforeInitialize, beforeSwap, afterSwap, afterSwapReturnDelta). The pool charges static 1.25% LP fees plus 1% of the actual unspecified-currency fill, collected as claims. Anyone can sweep RISK fees to the dead address and execute hourly buybacks using up to 25% of IMD claims, bounded 300 bps from the hook's time-weighted reference; partial fills retain unspent claims. The factory receives all 1e27 token units and performs the 10% swarm / 90% pool distribution."
+}
