@@ -27,12 +27,21 @@ vendored, real Uniswap v4 PoolManager and an ordinary ERC20 at the fixed IMD
 address. The mainnet fork uses the deployed PoolManager and IMD contracts, with
 test balances supplied by Foundry and a newly CREATE2-mined RISKHook.
 
-Reproduce the mainnet checks at block **26,151,212** with a mainnet archive RPC:
+The protocol-fee partial-buyback check follows the revised batch guard: it checks
+both the reference and pre-batch spot bands and requires the fill to reach the
+tighter band. Budget retention, protocol-fee accrual, unchanged LP fees, and the
+self-swap hook-fee exemption remain checked.
+
+Reproduce the mainnet checks at block **26,151,445** with a mainnet archive RPC:
 
 ```sh
 forge test --match-contract 'RISKHook.*MainnetForkTest' \
-  --fork-url "$MAINNET_RPC_URL" --fork-block-number 26151212
+  --fork-url "$MAINNET_RPC_URL" --fork-block-number 26151445
 ```
 
 This command runs the original integration test and the added adversarial fork
 suite. The offline suite remains self-contained when the verifier has no network.
+
+Revision validation: `forge build` succeeded; the offline suite passed 66 tests
+with two explicit fork skips. The two fork suites passed all 10 tests at the block
+above. The invariant suites completed 24,576 handler calls with zero reverts.

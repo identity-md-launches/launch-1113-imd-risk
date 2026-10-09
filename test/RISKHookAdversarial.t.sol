@@ -305,6 +305,7 @@ contract RISKHookAdversarialTest is RISKAdversarialScenarios {
         Currency pair = Currency.wrap(IMD);
         uint256 protocolBefore = manager.protocolFeesAccrued(pair);
         uint160 refPrice = hook.referencePrice();
+        (uint160 spotBefore,,,) = manager.getSlot0(key.toId());
         hook.executeBatch();
         uint256 spent = accrued - hook.pending();
         assertGt(spent, 0);
@@ -314,12 +315,26 @@ contract RISKHookAdversarialTest is RISKAdversarialScenarios {
         assertEq(hook.pendingBurn(), burn, "batch paid a hook fee");
         (uint160 price,,, uint24 lpFee) = manager.getSlot0(key.toId());
         assertEq(lpFee, 12500);
-        // Check the 3% bound in price space without copying the hook's sqrt multipliers.
-        uint256 ratio = uint256(price) * 1e18 / refPrice;
-        uint256 priceRatio = ratio * ratio / 1e18;
-        if (_direction(true)) assertApproxEqAbs(priceRatio, 0.97e18, 10);
-        else assertApproxEqAbs(priceRatio, 1.03e18, 10);
+        _assertPartialBatchPrice(price, refPrice, spotBefore);
         assertEq(manager.getNonzeroDeltaCount(), 0);
+    }
+
+    function _assertPartialBatchPrice(uint160 price, uint160 refPrice, uint160 spotBefore) internal view {
+        // Check both 3% bands in price space without copying the hook's sqrt multipliers.
+        // A partial fill must reach the tighter band; a stale reference may only tighten it.
+        uint256 refRatio = uint256(price) * 1e18 / refPrice;
+        refRatio = refRatio * refRatio / 1e18;
+        uint256 spotRatio = uint256(price) * 1e18 / spotBefore;
+        spotRatio = spotRatio * spotRatio / 1e18;
+        if (_direction(true)) {
+            assertGe(refRatio, 0.97e18 - 10, "batch exceeded reference band");
+            assertGe(spotRatio, 0.97e18 - 10, "batch exceeded spot band");
+            assertApproxEqAbs(refRatio < spotRatio ? refRatio : spotRatio, 0.97e18, 10);
+        } else {
+            assertLe(refRatio, 1.03e18 + 10, "batch exceeded reference band");
+            assertLe(spotRatio, 1.03e18 + 10, "batch exceeded spot band");
+            assertApproxEqAbs(refRatio > spotRatio ? refRatio : spotRatio, 1.03e18, 10);
+        }
     }
 }
 
